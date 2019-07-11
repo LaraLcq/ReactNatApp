@@ -7,3 +7,7 @@ export function getFilmsFromApiWithSearchedText (text) {
         .then((response) => response.json()) // then convertit la réponse de notre API en JSON et la retourne
         .catch((error) => console.log(error)) // En cas d'erreur, on passe automatiquement dans le  catch  et on affiche une erreur à l'écran.
 }
+
+export function getImageFromApi (name) {
+    return 'https://image.tmdb.org/t/p/w300' + name
+}

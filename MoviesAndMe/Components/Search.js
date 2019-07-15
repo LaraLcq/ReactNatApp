@@ -1,7 +1,7 @@
 // Components/Search.js
 
 import React from 'react'
-import { StyleSheet, View, TextInput, Button, Text, FlatList, ActivityIndicator } from 'react-native'
+import { StyleSheet, View, TextInput, Button,  FlatList, ActivityIndicator } from 'react-native'
 import FilmItem from './FilmItem'
 import { getFilmsFromApiWithSearchedText } from '../API/TMDBApi'
 
@@ -11,22 +11,26 @@ class Search extends React.Component {
   constructor(props) {
     super(props)
     this.searchedText = "" // Initialisation de notre donnée searchedText en dehors du state
+    this.page = 0 //compteur pour connaitre la page courante 
+    this.totalPages = 0 // Nombre de pages totales pour savoir si on a atteint la fin du retour de l'api 
     this.state = {
       films: [],
       isLoading: false // par défaut false car il n'y a pas de chargement tant que l'on ne lance pas de recherche 
     }
   }
 
-_loadFilms() {
-  if (this.searchedText.length > 0) {
-    this.setState({ isLoading: true }) // Lancement du chargement
-    getFilmsFromApiWithSearchedText(this.searchedText).then(data => {
-        this.setState({ 
-          films: data.results,
-          isLoading: false // Arrêt du chargement
-        })
-    })
-  }
+  _loadFilms() {
+    if (this.searchedText.length > 0) {
+      this.setState({ isLoading: true })
+      getFilmsFromApiWithSearchedText(this.searchedText, this.page+1).then(data => {
+          this.page = data.page
+          this.totalPages = data.total_pages
+          this.setState({
+            films: [ ...this.state.films, ...data.results ], // films: data.results , à chaque appel, on aurait écrasé et perdu les films que l'on a déjà récupérés. Notre but est d'ajouter les films à ceux que l'on a déjà récupérés et c'est exactement ce que l'on a fait ici. C'est une simplification permise par ES6, encore une fois. La syntaxe  ...tableau  crée une copie du tableau. 
+            isLoading: false
+          })
+      })
+    }
 }
 
   _searchTextInputChanged(text) {
@@ -59,6 +63,12 @@ _loadFilms() {
           data={this.state.films}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({item}) => <FilmItem film={item}/>}
+          onEndReachedThreshold={0.5}
+          onEndReached={() => {
+            if (this.page < this.totalPages) { // On vérifie qu'on n'a pas atteint la fin de la pagination (totalPages) avant de charger plus d'éléments
+              this._loadFilms()
+            }
+          }}
         />
         {this._displayLoading()}
       </View>
